@@ -109,6 +109,7 @@
     repo: "https://github.com/Genymobile/scrcpy.git"
     dest: "{{ scrcpy_temporary_dir.path }}/scrcpy"
     version: master
+    depth: 1
   when:
     - install_scrcpy
   tags:
