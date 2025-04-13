@@ -1,0 +1,135 @@
+# SPDX-License-Identifier: MIT-0
+---
+
+- name: Create temporary directory for building scrcpy
+  ansible.builtin.tempfile:
+    state: directory
+  register: scrcpy_temporary_dir
+  when:
+    - install_scrcpy
+  tags:
+    - scrcpy
+
+# https://github.com/Genymobile/scrcpy/blob/master/doc/build.md#linux
+- name: Install build prerequisites (apt)
+  ansible.builtin.apt:
+    name:
+      - adb
+      - ffmpeg
+      - gcc
+      - git
+      - libavcodec-dev
+      - libavdevice-dev
+      - libavformat-dev
+      - libavutil-dev
+      - libsdl2-2.0-0
+      - libsdl2-dev
+      - libswresample-dev
+      - libusb-1.0-0
+      - libusb-1.0-0-dev
+      - meson
+      - ninja-build
+      - pkg-config
+      - wget
+    state: present
+  become: true
+  when:
+    - install_scrcpy
+    - ansible_pkg_mgr == 'apt'
+  tags:
+    - scrcpy
+
+# https://github.com/Genymobile/scrcpy/blob/master/doc/build.md#linux
+# https://copr-dist-git.fedorainfracloud.org/cgit/zeno/scrcpy/scrcpy.git/tree/scrcpy.spec?id=6dd773eb33ec40cc4927d20e76c6090148f512b3
+- name: Install build prerequisites (dnf)
+  ansible.builtin.dnf:
+    name:
+      - android-tools
+      - ffmpeg-free
+      - gcc
+      - git
+      - libavcodec-free
+      - libavcodec-free-devel
+      - libavdevice-free
+      - libavdevice-free-devel
+      - libavformat-free
+      - libavformat-free-devel
+      - libavutil-free
+      - libavutil-free-devel
+      - libusb1
+      - libusb1-devel
+      - libdecor
+      - meson
+      - ninja-build
+      - pkgconf
+      - SDL2
+      - SDL2-devel
+      - vulkan-loader
+      - wget
+    state: present
+  become: true
+  when:
+    - install_scrcpy
+    - ansible_pkg_mgr == 'dnf'
+  tags:
+    - scrcpy
+
+- name: Install build prerequisites (pacman)
+  community.general.pacman:
+    name:
+      - android-tools
+      - android-udev
+      - ffmpeg
+      - gcc
+      - git
+      # - libavcodec-dev
+      # - libavdevice-dev
+      # - libavformat-dev
+      # - libavutil-dev
+      - sdl_image
+      # - libsdl2-2.0-0
+      # - libsdl2-dev
+      # - libswresample-dev
+      - libusb
+      - meson
+      - ninja
+      - pkgconf
+      - wget
+    state: present
+  become: true
+  when:
+    - install_scrcpy
+    - ansible_pkg_mgr == 'pacman'
+  tags:
+    - scrcpy
+
+# https://github.com/Genymobile/scrcpy/releases/
+- name: Clone scrcpy
+  ansible.builtin.git:
+    repo: "https://github.com/Genymobile/scrcpy.git"
+    dest: "{{ scrcpy_temporary_dir.path }}/scrcpy"
+    version: master
+  when:
+    - install_scrcpy
+  tags:
+    - scrcpy
+
+- name: Build scrcpy  # noqa command-instead-of-shell
+  ansible.builtin.shell:
+    chdir: "{{ scrcpy_temporary_dir.path }}/scrcpy"
+    cmd: "./install_release.sh"
+  register: scrcpy_build_result
+  changed_when: scrcpy_build_result.stdout != ""
+  when:
+    - install_scrcpy
+  tags:
+    - scrcpy
+
+- name: Delete temporary directory for scrcpy build
+  ansible.builtin.file:
+    path: "{{ scrcpy_temporary_dir.path }}"
+    state: absent
+  when:
+    - install_scrcpy
+  tags:
+    - scrcpy
