@@ -4,9 +4,9 @@
 - name: Create temporary directory for building scrcpy
   ansible.builtin.tempfile:
     state: directory
+    suffix: scrcpy
   register: scrcpy_temporary_dir
-  when:
-    - install_scrcpy
+  when: install_scrcpy
   tags:
     - scrcpy
 
@@ -70,7 +70,7 @@
   become: true
   when:
     - install_scrcpy
-    - ansible_pkg_mgr == 'dnf'
+    - ansible_pkg_mgr in ['dnf', 'dnf5']
   tags:
     - scrcpy
 
